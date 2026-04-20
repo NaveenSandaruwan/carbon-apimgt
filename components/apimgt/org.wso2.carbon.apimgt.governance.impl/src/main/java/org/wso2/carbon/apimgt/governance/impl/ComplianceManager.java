@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
  */
 public class ComplianceManager {
     private static final Log log = LogFactory.getLog(ComplianceManager.class);
+    private static final String EXTERNAL_LOG_PREFIX = "###===### [External Governance] ";
 
     private final ComplianceMgtDAO complianceMgtDAO;
     private final GovernancePolicyMgtDAO policyMgtDAO;
@@ -543,6 +544,13 @@ public class ComplianceManager {
 
             // Validate the artifact against each ruleset
             for (Ruleset ruleset : rulesets) {
+
+                if (RuleCategory.EXTERNAL.equals(ruleset.getRuleCategory())) {
+                    log.debug(EXTERNAL_LOG_PREFIX + "Skipping EXTERNAL ruleset " + ruleset.getId()
+                            + " during sync evaluation for artifact " + artifactRefId
+                            + ". EXTERNAL rulesets are async-only.");
+                    continue;
+                }
 
                 // Handle GENERIC rulesets (deduplication + lifecycle) - these need special
                 // handling as they don't match artifact types but use GatekeeperValidationEngine.

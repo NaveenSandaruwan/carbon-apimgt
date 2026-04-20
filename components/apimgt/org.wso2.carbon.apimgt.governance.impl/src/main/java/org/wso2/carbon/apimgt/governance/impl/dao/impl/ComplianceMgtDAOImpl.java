@@ -238,7 +238,6 @@ public class ComplianceMgtDAOImpl implements ComplianceMgtDAO {
         }
     }
 
-
     /**
      * Update the evaluation status of a pending request to processing
      *

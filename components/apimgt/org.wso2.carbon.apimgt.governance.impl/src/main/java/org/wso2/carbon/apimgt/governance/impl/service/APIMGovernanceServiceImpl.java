@@ -55,6 +55,7 @@ import java.util.Set;
 public class APIMGovernanceServiceImpl implements APIMGovernanceService {
 
     private static final Log log = LogFactory.getLog(APIMGovernanceServiceImpl.class);
+    private static final String EXTERNAL_LOG_PREFIX = "###===### [External Governance] ";
     private final ComplianceManager complianceManager;
     private final PolicyManager policyManager;
 
@@ -88,10 +89,37 @@ public class APIMGovernanceServiceImpl implements APIMGovernanceService {
         log.info("[BLOCK-CHECK] State-filtered policies (" + state + "): " + applicablePolicyIds.size()
                 + " -> " + applicablePolicyIds);
 
-        // Check for explicit BLOCK actions in the GOV_POLICY_ACTION table
-        if (APIMGovernanceUtil.isBlockingActionsPresent(applicablePolicyIds, state, organization)) {
-            log.info("[BLOCK-CHECK] Explicit BLOCK action found in policy action table. Returning true.");
-            return true;
+        // External rulesets are async-only. A blocking policy should trigger sync evaluation only if
+        // it contains at least one non-EXTERNAL ruleset.
+        boolean hasBlockingPolicy = false;
+        for (String policyId : applicablePolicyIds) {
+            if (!policyManager.isBlockingActionPresentForState(policyId, state, organization)) {
+                continue;
+            }
+
+            hasBlockingPolicy = true;
+            List<Ruleset> rulesets = policyManager.getRulesetsWithContentByPolicyId(policyId, organization);
+            boolean hasSyncEligibleRuleset = false;
+            for (Ruleset ruleset : rulesets) {
+                if (!RuleCategory.EXTERNAL.equals(ruleset.getRuleCategory())) {
+                    hasSyncEligibleRuleset = true;
+                    break;
+                }
+            }
+
+            if (hasSyncEligibleRuleset) {
+                log.info("[BLOCK-CHECK] Policy " + policyId
+                        + " contains a blocking action with sync-eligible rulesets.");
+                return true;
+            }
+
+            log.info(EXTERNAL_LOG_PREFIX + "Skipping sync trigger for blocking policy " + policyId
+                    + " because all associated rulesets are EXTERNAL.");
+        }
+
+        if (hasBlockingPolicy) {
+            log.info(EXTERNAL_LOG_PREFIX + "Blocking actions were found, but all matching policies are "
+                    + "EXTERNAL-only. Compliance will continue asynchronously.");
         }
 
         // For GENERIC rulesets (e.g., deduplication), check ALL applicable policies WITHOUT state filter.
