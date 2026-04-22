@@ -38,7 +38,7 @@ import org.wso2.carbon.apimgt.governance.impl.validator.ValidationEngineFactory;
 public class ExternalGovernanceComponent {
 
     private static final Log log = LogFactory.getLog(ExternalGovernanceComponent.class);
-    private static volatile boolean activated = false;
+    private volatile boolean activated = false;
     private ExternalGovernanceValidationEngine externalGovernanceValidationEngine;
 
     @Activate

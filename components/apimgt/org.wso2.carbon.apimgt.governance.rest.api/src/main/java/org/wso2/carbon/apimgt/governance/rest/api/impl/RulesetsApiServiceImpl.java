@@ -223,14 +223,15 @@ public class RulesetsApiServiceImpl implements RulesetsApiService {
                     isComplianceExcluded = true;
                 }
             }
-            if (name != null && (name.toLowerCase().contains("lifecycle")
-                    || name.toLowerCase().contains("retirement"))) {
+            String rulesetName = StringUtils.defaultString(name);
+            if (StringUtils.containsIgnoreCase(rulesetName, "lifecycle")
+                    || StringUtils.containsIgnoreCase(rulesetName, "retirement")) {
                 isComplianceExcluded = true;
             }
             if (!isComplianceExcluded) {
                 new ComplianceManager().handleRulesetChangeEvent(rulesetId, organization);
             } else {
-                log.info("Skipping compliance re-evaluation for transition-based ruleset: " + name
+                log.info("Skipping compliance re-evaluation for transition-based ruleset: " + rulesetName
                         + " (compliance_exclusion=true)");
             }
 
