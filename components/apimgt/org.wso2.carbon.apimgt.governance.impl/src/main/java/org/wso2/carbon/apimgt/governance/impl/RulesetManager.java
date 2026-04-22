@@ -151,7 +151,6 @@ public class RulesetManager {
 
         // Use Factory to get the appropriate validation engine for this ruleset's category
         ValidationEngine validationEngine = ValidationEngineFactory.getValidationEngine(ruleset);
-
         validationEngine.validateRulesetContent(ruleset, APIMGovernanceUtil.getAPIMGovernanceOptions());
         List<Rule> rules = validationEngine.extractRulesFromRuleset(ruleset);
 
