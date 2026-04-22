@@ -49,12 +49,14 @@ import org.wso2.carbon.apimgt.governance.impl.util.APIMGovernanceUtil;
 import org.wso2.carbon.apimgt.governance.impl.util.AuditLogger;
 import org.wso2.carbon.apimgt.governance.impl.validator.ValidationEngineFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -606,7 +608,7 @@ public class ComplianceManager {
                                     "GENERIC ruleset %s found %d violations for artifact %s (mode=%s, state=%s)",
                                     ruleset.getId(), ruleViolations.size(), artifactRefId, dedupMode, state);
                         }
-                    } catch (Exception e) {
+                    } catch (APIMGovernanceException e) {
                         log.warn("GENERIC ruleset evaluation failed for artifact " + artifactRefId
                                 + ": " + e.getMessage());
                         if (log.isDebugEnabled()) {
@@ -881,10 +883,10 @@ public class ComplianceManager {
                     // Skip lifecycle rulesets — their mode=block is for lifecycle
                     // transitions, not deploy-time enforcement.
                     String rsetNameLc = ruleset.getName() != null
-                            ? ruleset.getName().toLowerCase() : "";
+                            ? ruleset.getName().toLowerCase(Locale.ENGLISH) : "";
                     String rsetContent = ruleset.getRulesetContent() != null
                             && ruleset.getRulesetContent().getContent() != null
-                            ? new String(ruleset.getRulesetContent().getContent()) : "";
+                            ? new String(ruleset.getRulesetContent().getContent(), StandardCharsets.UTF_8) : "";
                     boolean isLifecycleRuleset = rsetNameLc.contains("lifecycle")
                             || rsetNameLc.contains("retirement")
                             || rsetNameLc.contains("deprecation")
@@ -972,7 +974,7 @@ public class ComplianceManager {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (java.io.IOException e) {
             log.debug("Could not parse dedup mode from ruleset: " + e.getMessage());
         }
         return "audit"; // Default to audit

@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -568,9 +569,10 @@ public class ComplianceEvaluationScheduler {
                             + ". This is expected for lifecycle rulesets that don't need content.");
                 }
                 // For lifecycle rulesets, still proceed with empty content + metadata
-                boolean isLifecycle = ruleset.getName() != null
-                        && (ruleset.getName().toLowerCase().contains("lifecycle")
-                        || ruleset.getName().toLowerCase().contains("retirement"));
+                String rulesetName = ruleset.getName();
+                String rulesetNameLowerCase = rulesetName != null ? rulesetName.toLowerCase(Locale.ENGLISH) : "";
+                boolean isLifecycle = rulesetNameLowerCase.contains("lifecycle")
+                        || rulesetNameLowerCase.contains("retirement");
                 if (isLifecycle) {
                     if (log.isDebugEnabled()) {
                         log.debug("Lifecycle ruleset detected — proceeding with metadata-only content.");
