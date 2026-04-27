@@ -14,18 +14,16 @@ rulesetContent:
       severity: error
       payload:
         method: POST
-        contentPath: "$.description"
+        contentPath: "<payload-content-path>"
         template:
           - description: "{{value}}"
       response:
-        resultPath: "$[0].is_poisoned"
+        resultPath: "<response-result-path>"
         expectedValue: true
       timeout: 50000
       retry: 5
       headers:
         Content-Type: application/json
-        Accept: 
-        Test-Key: "<key>"
         key: "<value>"
       description: >-
         Tool descriptions in MCP server definitions can be exploited through tool poisoning
