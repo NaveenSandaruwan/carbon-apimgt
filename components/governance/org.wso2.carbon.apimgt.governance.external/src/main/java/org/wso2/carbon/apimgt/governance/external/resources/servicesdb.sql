@@ -10,7 +10,7 @@ CREATE TABLE EXTERNAL_SERVICES (
 
 DO $$
 BEGIN
-    CREATE TYPE header_category AS ENUM ('Standard', 'Security');
+    CREATE TYPE header_category AS ENUM ('STANDARD', 'SECURITY');
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
@@ -20,7 +20,7 @@ CREATE TABLE EXTERNAL_SERVICE_HEADERS (
     service_id UUID REFERENCES EXTERNAL_SERVICES(id) ON DELETE CASCADE,
     header_key VARCHAR(100) NOT NULL,
     header_value TEXT NOT NULL,
-    category header_category DEFAULT 'Standard',
+    category header_category DEFAULT 'STANDARD',
 
     CONSTRAINT fk_service
         FOREIGN KEY(service_id) 

@@ -31,6 +31,7 @@
     <jaxrs:server id="services" address="/">
         <jaxrs:serviceBeans>
             <bean class="org.wso2.carbon.apimgt.governance.rest.api.gateway.SwaggerYamlApi"/>
+            <bean class="org.wso2.carbon.apimgt.governance.rest.api.ExternalServicesApi"/>
             <bean class="org.wso2.carbon.apimgt.governance.rest.api.RulesetsApi"/>
             <bean class="org.wso2.carbon.apimgt.governance.rest.api.PoliciesApi"/>
             <bean class="org.wso2.carbon.apimgt.governance.rest.api.ArtifactComplianceApi"/>

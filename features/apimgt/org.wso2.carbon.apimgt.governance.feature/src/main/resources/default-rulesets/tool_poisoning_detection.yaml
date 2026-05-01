@@ -8,17 +8,17 @@ documentationLink: "<service-documentation-link>"
 provider: WSO2
 rulesetContent:
   rules:
-    'description-poisoning-detection':
-      serviceUrl: "<service-endpoint>"
+    description-poisoning-detection:
+      serviceUrl: "https://your-service-endpoint/validate/tool-poisoning"
       targetPath: "$.data.operations[*]"
       severity: error
       payload:
         method: POST
-        contentPath: "<payload-content-path>"
+        contentPath: "$.data.operations[*].description"
         template:
           - description: "{{value}}"
       response:
-        resultPath: "<response-result-path>"
+        resultPath: "$.flagged"
         expectedValue: true
       timeout: 50000
       retry: 5

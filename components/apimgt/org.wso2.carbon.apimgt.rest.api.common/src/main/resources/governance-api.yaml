@@ -38,6 +38,8 @@ tags:
     description: for accessing artifact compliance.
   - name: Policy Adherence
     description: for accessing policy adherence.
+  - name: External Services
+    description: for managing external services.
   - name: Deprecated
     description: resources that are deprecated.
 paths:
@@ -908,6 +910,167 @@ paths:
         - OAuth2Security:
             - apim:gov_result_read
 
+
+  /external-services:
+    get:
+      summary: Retrieves a list of external services.
+      description: Returns a list of all external services.
+      operationId: getExternalServices
+      tags:
+        - External Services
+      responses:
+        "200":
+          description: OK. Successful response with a list of external services.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalServiceList'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - OAuth2Security:
+            - apim:gov_rule_read
+    post:
+      summary: Create a new external service.
+      description: Creates a new external service.
+      operationId: createExternalService
+      tags:
+        - External Services
+      requestBody:
+        description: External service object that needs to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalService'
+      responses:
+        "201":
+          description: Created. Successful response with the newly created object as entity in the body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalService'
+        "400":
+          description: Bad Request. Invalid request or validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - OAuth2Security:
+            - apim:gov_rule_manage
+            
+  /external-services/{serviceId}:
+    get:
+      summary: Get details of an external service.
+      description: Retrieves the details of an external service using the service ID.
+      operationId: getExternalServiceById
+      tags:
+        - External Services
+      parameters:
+        - $ref: '#/components/parameters/serviceId'
+      responses:
+        "200":
+          description: OK. Successful response with the external service details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalService'
+        "404":
+          description: Not Found. Requested external service does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - OAuth2Security:
+            - apim:gov_rule_read
+    put:
+      summary: Update details of an external service.
+      description: Updates the details of an existing external service using the service ID.
+      operationId: updateExternalService
+      tags:
+        - External Services
+      parameters:
+        - $ref: '#/components/parameters/serviceId'
+      requestBody:
+        description: External service object that needs to be updated
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalService'
+      responses:
+        "200":
+          description: OK. Successful response with the updated external service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalService'
+        "400":
+          description: Bad Request. Invalid request or validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: Not Found. Requested external service does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - OAuth2Security:
+            - apim:gov_rule_manage
+    delete:
+      summary: Delete an external service.
+      description: Deletes an existing external service using the service ID.
+      operationId: deleteExternalService
+      tags:
+        - External Services
+      parameters:
+        - $ref: '#/components/parameters/serviceId'
+      responses:
+        "204":
+          description: No Content. Resource successfully deleted.
+        "404":
+          description: Not Found. Requested external service does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - OAuth2Security:
+            - apim:gov_rule_manage
+
 components:
   schemas:
     Pagination:
@@ -949,6 +1112,84 @@ components:
           type: string
           description: |
             A detail description about the error message.
+
+    ExternalService:
+      title: ExternalService
+      description: "External service details"
+      type: object
+      properties:
+        id:
+          type: string
+          description: "UUID of the external service"
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: "Name of the external service"
+          example: "MyAI Service"
+        url:
+          type: string
+          description: "URL of the external service"
+          example: "https://api.openai.com/v1/models"
+        prompt:
+          type: string
+          description: "Prompt to be used with the external service"
+          example: "Review this schema:"
+        timeoutMs:
+          type: integer
+          description: "Timeout in milliseconds"
+          example: 5000
+        retryCount:
+          type: integer
+          description: "Number of retries"
+          example: 3
+        headers:
+          type: array
+          description: "List of headers for the external service"
+          items:
+            $ref: '#/components/schemas/ExternalServiceHeader'
+      required:
+        - name
+        - url
+
+    ExternalServiceHeader:
+      title: ExternalServiceHeader
+      description: "Header details for external service"
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "ID of the header"
+          example: 1
+        headerKey:
+          type: string
+          description: "Header Key"
+          example: "Authorization"
+        headerValue:
+          type: string
+          description: "Header Value"
+          example: "Bearer {TOKEN}"
+        category:
+          type: string
+          description: "Header category (Standard/Security)"
+          example: "Security"
+          enum: [ "Standard", "Security" ]
+      required:
+        - headerKey
+        - headerValue
+
+    ExternalServiceList:
+      title: ExternalServiceList
+      description: "List of external services"
+      type: object
+      properties:
+        count:
+          type: integer
+          description: "Number of external services returned."
+          example: 1
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExternalService'
     RulesetList:
       type: object
       description: A list of rulesets.
@@ -1640,6 +1881,15 @@ components:
             apim:gov_policy_manage: Manage governance policies
             apim:gov_result_read: Read governance results
   parameters:
+
+    serviceId:
+      name: serviceId
+      in: path
+      description: |
+        **UUID** of the External Service.
+      required: true
+      schema:
+        type: string
     artifactId:
       name: artifactId
       in: path
