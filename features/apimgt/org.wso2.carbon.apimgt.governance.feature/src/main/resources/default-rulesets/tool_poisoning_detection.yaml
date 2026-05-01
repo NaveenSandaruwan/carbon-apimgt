@@ -9,22 +9,17 @@ provider: WSO2
 rulesetContent:
   rules:
     description-poisoning-detection:
-      serviceUrl: "https://your-service-endpoint/validate/tool-poisoning"
       targetPath: "$.data.operations[*]"
       severity: error
       payload:
         method: POST
-        contentPath: "$.data.operations[*].description"
+        contentPath: "$.description"
         template:
           - description: "{{value}}"
       response:
-        resultPath: "$.flagged"
+        resultPath: "$[0].is_poisoned"
         expectedValue: true
-      timeout: 50000
-      retry: 5
-      headers:
-        Content-Type: application/json
-        key: "<value>"
+      serviceRef: "aee9480c-cbb9-48fc-9723-925bf454bc49"
       description: >-
         Tool descriptions in MCP server definitions can be exploited through tool poisoning
         attacks, where malicious or hidden instructions are embedded to manipulate AI agent

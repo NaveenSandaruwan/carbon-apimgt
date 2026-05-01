@@ -28,12 +28,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.apimgt.governance.api.error.APIMGovExceptionCodes;
 import org.wso2.carbon.apimgt.governance.api.error.APIMGovernanceException;
+import org.wso2.carbon.apimgt.governance.api.model.ExternalService;
+import org.wso2.carbon.apimgt.governance.api.model.ExternalServiceHeader;
 import org.wso2.carbon.apimgt.governance.api.model.ExtendedArtifactType;
 import org.wso2.carbon.apimgt.governance.api.model.RuleSeverity;
 import org.wso2.carbon.apimgt.governance.api.model.RuleType;
 import org.wso2.carbon.apimgt.governance.api.model.RuleViolation;
 import org.wso2.carbon.apimgt.governance.api.model.Ruleset;
 import org.wso2.carbon.apimgt.governance.api.model.RulesetContent;
+import org.wso2.carbon.apimgt.governance.impl.ExternalServiceManager;
 import org.wso2.carbon.apimgt.governance.external.model.ExternalEvaluationContext;
 import org.wso2.carbon.apimgt.governance.external.model.ExternalPathMatch;
 import org.wso2.carbon.apimgt.governance.external.model.ExternalRequestPayload;
@@ -42,8 +45,6 @@ import org.wso2.carbon.apimgt.governance.external.model.ExternalRuleDefinition;
 import org.wso2.carbon.apimgt.governance.external.model.ExternalRulesetDefinition;
 import org.wso2.carbon.apimgt.governance.external.model.ExternalRulesetContentDefinition;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,6 +60,7 @@ public final class ExternalRulesetUtils {
             .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private static final ExternalServiceManager EXTERNAL_SERVICE_MANAGER = new ExternalServiceManager();
     private static final String ROOT_PATH = "$";
     private static final int MAX_PATH_LENGTH = 1024;
     private static final int MAX_MESSAGE_LENGTH = 1024;
@@ -185,20 +187,39 @@ public final class ExternalRulesetUtils {
         return payload.getContentPath().trim();
     }
 
-    public static Map<String, Object> getHeaders(ExternalRuleDefinition ruleDefinition) {
+    public static Map<String, Object> getHeaders(ExternalRuleDefinition ruleDefinition) throws APIMGovernanceException {
 
         Map<String, Object> headers = new LinkedHashMap<>();
-        if (ruleDefinition == null) {
+        ExternalService externalService = resolveExternalService(ruleDefinition);
+        if (externalService == null || externalService.getHeaders() == null) {
             return headers;
         }
-        ExternalRequestPayload payload = ruleDefinition.getPayload();
-        if (payload != null && payload.getHeaders() != null) {
-            headers.putAll(payload.getHeaders());
-        }
-        if (ruleDefinition.getHeaders() != null) {
-            headers.putAll(ruleDefinition.getHeaders());
+        for (ExternalServiceHeader header : externalService.getHeaders()) {
+            if (header != null && header.getHeaderKey() != null) {
+                headers.put(header.getHeaderKey(), header.getHeaderValue());
+            }
         }
         return headers;
+    }
+
+    public static ExternalService resolveExternalService(ExternalRuleDefinition ruleDefinition)
+            throws APIMGovernanceException {
+
+        if (ruleDefinition == null) {
+            return null;
+        }
+
+        String serviceRef = ruleDefinition.getServiceRef();
+        if (serviceRef == null || serviceRef.trim().isEmpty()) {
+            throw new APIMGovernanceException("External governance rules must define `serviceRef`");
+        }
+
+        ExternalService externalService = EXTERNAL_SERVICE_MANAGER.getExternalServiceById(serviceRef.trim());
+        if (externalService == null) {
+            throw new APIMGovernanceException("Referenced external service `" + serviceRef.trim()
+                    + "` could not be found");
+        }
+        return externalService;
     }
 
     public static String deriveTargetIdentifier(JsonNode targetNode, String fallbackPath) {
@@ -293,13 +314,8 @@ public final class ExternalRulesetUtils {
             throw invalidRuleset(ruleset, "Rule name `" + ruleName + "` exceeds the maximum length of 256 "
                     + "characters");
         }
-        if (ruleDefinition.getServiceUrl() == null || ruleDefinition.getServiceUrl().trim().isEmpty()) {
-            throw invalidRuleset(ruleset, "Rule `" + ruleName + "` must define `serviceUrl`");
-        }
-        try {
-            new URL(ruleDefinition.getServiceUrl());
-        } catch (MalformedURLException e) {
-            throw invalidRuleset(ruleset, "Rule `" + ruleName + "` contains an invalid `serviceUrl`");
+        if (ruleDefinition.getServiceRef() == null || ruleDefinition.getServiceRef().trim().isEmpty()) {
+            throw invalidRuleset(ruleset, "Rule `" + ruleName + "` must define `serviceRef`");
         }
 
         ExternalRequestPayload payload = ruleDefinition.getPayload();
@@ -334,12 +350,6 @@ public final class ExternalRulesetUtils {
         if (responseDefinition.getMessagePath() != null && !responseDefinition.getMessagePath().trim().isEmpty()
                 && !responseDefinition.getMessagePath().trim().startsWith(ROOT_PATH)) {
             throw invalidRuleset(ruleset, "Rule `" + ruleName + "` contains an invalid `response.messagePath`");
-        }
-        if (ruleDefinition.getTimeout() != null && ruleDefinition.getTimeout() <= 0) {
-            throw invalidRuleset(ruleset, "Rule `" + ruleName + "` contains an invalid `timeout`");
-        }
-        if (ruleDefinition.getRetry() != null && ruleDefinition.getRetry() <= 0) {
-            throw invalidRuleset(ruleset, "Rule `" + ruleName + "` contains an invalid `retry`");
         }
     }
 

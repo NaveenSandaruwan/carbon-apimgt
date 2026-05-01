@@ -25,6 +25,7 @@ import java.util.Map;
  */
 public class ExternalRuleDefinition {
 
+    private String serviceRef;
     private String serviceUrl;
     private String targetPath;
     private String severity;
@@ -35,6 +36,16 @@ public class ExternalRuleDefinition {
     private ExternalResponseDefinition response;
     private String description;
     private String message;
+
+    public String getServiceRef() {
+
+        return serviceRef;
+    }
+
+    public void setServiceRef(String serviceRef) {
+
+        this.serviceRef = serviceRef;
+    }
 
     public String getServiceUrl() {
 

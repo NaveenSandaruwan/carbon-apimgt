@@ -22,8 +22,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.apimgt.governance.api.error.APIMGovernanceException;
+import org.wso2.carbon.apimgt.governance.api.model.ExternalService;
 import org.wso2.carbon.apimgt.governance.external.model.ExternalEvaluationContext;
 import org.wso2.carbon.apimgt.governance.external.model.ExternalRuleDefinition;
+import org.wso2.carbon.apimgt.governance.external.util.ExternalRulesetUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -53,9 +56,10 @@ public class ExternalServiceClient {
     public JsonNode invoke(ExternalRuleDefinition ruleDefinition, ExternalEvaluationContext evaluationContext,
                            Object requestBody, Map<String, String> headers) throws ExternalServiceException {
 
+        ExternalService externalService = resolveExternalService(ruleDefinition);
         String method = resolveMethod(ruleDefinition);
-        int timeoutMillis = resolveTimeout(ruleDefinition);
-        int retryAttempts = resolveRetryAttempts(ruleDefinition);
+        int timeoutMillis = resolveTimeout(externalService);
+        int retryAttempts = resolveRetryAttempts(externalService);
         Map<String, String> effectiveHeaders = new LinkedHashMap<>();
         if (headers != null) {
             effectiveHeaders.putAll(headers);
@@ -85,10 +89,10 @@ public class ExternalServiceClient {
                 if (log.isDebugEnabled()) {
                     log.debug("Calling external validation service. ruleTarget="
                             + evaluationContext.getTargetIdentifier() + ", serviceUrl="
-                            + ruleDefinition.getServiceUrl() + ", attempt=" + attempt
+                            + externalService.getUrl() + ", attempt=" + attempt
                             + "/" + retryAttempts + ", timeout=" + timeoutMillis + "ms");
                 }
-                return executeHttpCall(ruleDefinition.getServiceUrl(), method, requestPayload, effectiveHeaders,
+                return executeHttpCall(externalService.getUrl(), method, requestPayload, effectiveHeaders,
                         timeoutMillis);
             } catch (ExternalServiceException e) {
                 lastFailure = e;
@@ -116,6 +120,16 @@ public class ExternalServiceClient {
         throw lastFailure != null ? lastFailure
                 : new ExternalServiceException("External validation request failed for target `"
                 + evaluationContext.getTargetIdentifier() + "`");
+    }
+
+    private ExternalService resolveExternalService(ExternalRuleDefinition ruleDefinition)
+            throws ExternalServiceException {
+
+        try {
+            return ExternalRulesetUtils.resolveExternalService(ruleDefinition);
+        } catch (APIMGovernanceException e) {
+            throw new ExternalServiceException(e.getMessage(), e);
+        }
     }
 
     private JsonNode executeHttpCall(String serviceUrl, String method, String requestPayload,
@@ -252,18 +266,20 @@ public class ExternalServiceClient {
         return method.trim().toUpperCase(Locale.ENGLISH);
     }
 
-    private int resolveTimeout(ExternalRuleDefinition ruleDefinition) {
+    private int resolveTimeout(ExternalService externalService) {
 
-        if (ruleDefinition.getTimeout() != null && ruleDefinition.getTimeout() > 0) {
-            return ruleDefinition.getTimeout();
+        if (externalService != null && externalService.getTimeoutMs() != null
+                && externalService.getTimeoutMs() > 0) {
+            return externalService.getTimeoutMs();
         }
         return Math.max(CONNECT_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS);
     }
 
-    private int resolveRetryAttempts(ExternalRuleDefinition ruleDefinition) {
+    private int resolveRetryAttempts(ExternalService externalService) {
 
-        if (ruleDefinition.getRetry() != null && ruleDefinition.getRetry() > 0) {
-            return ruleDefinition.getRetry();
+        if (externalService != null && externalService.getRetryCount() != null
+                && externalService.getRetryCount() > 0) {
+            return externalService.getRetryCount();
         }
         return DEFAULT_RETRY_ATTEMPTS;
     }
