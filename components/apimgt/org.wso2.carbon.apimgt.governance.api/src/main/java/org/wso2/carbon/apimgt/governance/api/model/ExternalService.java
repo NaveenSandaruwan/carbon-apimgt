@@ -31,6 +31,7 @@ public class ExternalService {
     private String prompt;
     private Integer timeoutMs;
     private Integer retryCount;
+    private Boolean isLLM;
     private String createdAt;
     private List<ExternalServiceHeader> headers = new ArrayList<>();
 
@@ -80,6 +81,14 @@ public class ExternalService {
 
     public void setRetryCount(Integer retryCount) {
         this.retryCount = retryCount;
+    }
+
+    public Boolean getIsLLM() {
+        return isLLM;
+    }
+
+    public void setIsLLM(Boolean isLLM) {
+        this.isLLM = isLLM;
     }
 
     public String getCreatedAt() {

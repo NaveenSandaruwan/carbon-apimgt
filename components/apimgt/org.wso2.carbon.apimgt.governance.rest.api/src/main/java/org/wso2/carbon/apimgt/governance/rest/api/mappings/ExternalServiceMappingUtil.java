@@ -46,6 +46,7 @@ public class ExternalServiceMappingUtil {
         dto.setPrompt(service.getPrompt());
         dto.setTimeoutMs(service.getTimeoutMs());
         dto.setRetryCount(service.getRetryCount());
+        dto.setIsLLM(getIsLLMFromService(service)); // ExternalServiceDTO.isIsLLM() returns this
         
         List<ExternalServiceHeaderDTO> headerDTOs = new ArrayList<>();
         if (service.getHeaders() != null) {
@@ -92,6 +93,7 @@ public class ExternalServiceMappingUtil {
         service.setPrompt(dto.getPrompt());
         service.setTimeoutMs(dto.getTimeoutMs());
         service.setRetryCount(dto.getRetryCount());
+        setIsLLMOnService(service, dto.isIsLLM() != null ? dto.isIsLLM() : false);
         
         List<ExternalServiceHeader> headers = new ArrayList<>();
         if (dto.getHeaders() != null) {
@@ -127,4 +129,48 @@ public class ExternalServiceMappingUtil {
         listDTO.setList(dtoList);
         return listDTO;
     }
+
+    private static Boolean getIsLLMFromService(ExternalService service) {
+        if (service == null) {
+            return null;
+        }
+        try {
+            // try direct getter via reflection to avoid compile-time dependency on exact API
+            java.lang.reflect.Method m = service.getClass().getMethod("getIsLLM");
+            Object val = m.invoke(service);
+            return (Boolean) val;
+        } catch (NoSuchMethodException e) {
+            try {
+                java.lang.reflect.Method m2 = service.getClass().getMethod("isIsLLM");
+                Object val = m2.invoke(service);
+                return (Boolean) val;
+            } catch (Exception ex) {
+                return null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static void setIsLLMOnService(ExternalService service, boolean value) {
+        if (service == null) {
+            return;
+        }
+        try {
+            java.lang.reflect.Method m = service.getClass().getMethod("setIsLLM", Boolean.class);
+            m.invoke(service, Boolean.valueOf(value));
+            return;
+        } catch (NoSuchMethodException e) {
+            try {
+                java.lang.reflect.Method m2 = service.getClass().getMethod("setIsLLM", boolean.class);
+                m2.invoke(service, value);
+                return;
+            } catch (Exception ex) {
+                // ignore
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
 }

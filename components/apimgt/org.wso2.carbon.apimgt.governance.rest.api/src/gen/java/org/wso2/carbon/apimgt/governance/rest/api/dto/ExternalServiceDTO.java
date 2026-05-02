@@ -32,6 +32,7 @@ public class ExternalServiceDTO   {
     private String prompt = null;
     private Integer timeoutMs = null;
     private Integer retryCount = null;
+    private Boolean isLLM = null;
     private List<ExternalServiceHeaderDTO> headers = new ArrayList<ExternalServiceHeaderDTO>();
 
   /**
@@ -145,6 +146,24 @@ public class ExternalServiceDTO   {
   }
 
   /**
+   * Whether this external service is an LLM provider
+   **/
+  public ExternalServiceDTO isLLM(Boolean isLLM) {
+    this.isLLM = isLLM;
+    return this;
+  }
+
+  
+  @ApiModelProperty(example = "true", value = "Whether this external service is an LLM provider")
+  @JsonProperty("isLLM")
+  public Boolean isIsLLM() {
+    return isLLM;
+  }
+  public void setIsLLM(Boolean isLLM) {
+    this.isLLM = isLLM;
+  }
+
+  /**
    * List of headers for the external service
    **/
   public ExternalServiceDTO headers(List<ExternalServiceHeaderDTO> headers) {
@@ -179,12 +198,13 @@ public class ExternalServiceDTO   {
         Objects.equals(prompt, externalService.prompt) &&
         Objects.equals(timeoutMs, externalService.timeoutMs) &&
         Objects.equals(retryCount, externalService.retryCount) &&
+        Objects.equals(isLLM, externalService.isLLM) &&
         Objects.equals(headers, externalService.headers);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, url, prompt, timeoutMs, retryCount, headers);
+    return Objects.hash(id, name, url, prompt, timeoutMs, retryCount, isLLM, headers);
   }
 
   @Override
@@ -198,6 +218,7 @@ public class ExternalServiceDTO   {
     sb.append("    prompt: ").append(toIndentedString(prompt)).append("\n");
     sb.append("    timeoutMs: ").append(toIndentedString(timeoutMs)).append("\n");
     sb.append("    retryCount: ").append(toIndentedString(retryCount)).append("\n");
+    sb.append("    isLLM: ").append(toIndentedString(isLLM)).append("\n");
     sb.append("    headers: ").append(toIndentedString(headers)).append("\n");
     sb.append("}");
     return sb.toString();

@@ -1142,6 +1142,10 @@ components:
           type: integer
           description: "Number of retries"
           example: 3
+        isLLM:
+          type: boolean
+          description: "Whether this external service is an LLM provider"
+          example: true
         headers:
           type: array
           description: "List of headers for the external service"
