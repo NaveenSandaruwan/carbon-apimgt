@@ -40,21 +40,21 @@ import java.util.UUID;
  */
 public class ExternalServiceMgtDAOImpl implements ExternalServiceMgtDAO {
 
-    private static final String ADD_EXTERNAL_SERVICE_SQL = "INSERT INTO EXTERNAL_SERVICES (ID, NAME, URL, PROMPT, " +
-            "TIMEOUT_MS, RETRY_COUNT, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        private static final String ADD_EXTERNAL_SERVICE_HEADER_SQL = "INSERT INTO EXTERNAL_SERVICE_HEADERS " +
+    private static final String ADD_EXTERNAL_SERVICE_SQL = "INSERT INTO EXTERNAL_SERVICES (ID, NAME, URL, " +
+            "PROMPT, TIMEOUT_MS, RETRY_COUNT, IS_LLM, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String ADD_EXTERNAL_SERVICE_HEADER_SQL = "INSERT INTO EXTERNAL_SERVICE_HEADERS " +
             "(SERVICE_ID, HEADER_KEY, HEADER_VALUE, CATEGORY) VALUES (?, ?, ?, ?)";
     private static final String UPDATE_EXTERNAL_SERVICE_SQL = "UPDATE EXTERNAL_SERVICES SET NAME = ?, URL = ?, " +
-            "PROMPT = ?, TIMEOUT_MS = ?, RETRY_COUNT = ? WHERE ID = ?";
+            "PROMPT = ?, TIMEOUT_MS = ?, RETRY_COUNT = ?, IS_LLM = ? WHERE ID = ?";
     private static final String DELETE_HEADERS_BY_SERVICE_ID_SQL =
  "DELETE FROM EXTERNAL_SERVICE_HEADERS WHERE SERVICE_ID = ?";
     private static final String DELETE_EXTERNAL_SERVICE_SQL = "DELETE FROM EXTERNAL_SERVICES WHERE ID = ?";
-    private static final String GET_EXTERNAL_SERVICE_BY_ID_SQL = "SELECT ID, NAME, URL, PROMPT, TIMEOUT_MS, " +
-            "RETRY_COUNT, CREATED_AT FROM EXTERNAL_SERVICES WHERE ID = ?";
+        private static final String GET_EXTERNAL_SERVICE_BY_ID_SQL = "SELECT ID, NAME, URL, PROMPT, TIMEOUT_MS, " +
+            "RETRY_COUNT, IS_LLM, CREATED_AT FROM EXTERNAL_SERVICES WHERE ID = ?";
     private static final String GET_HEADERS_BY_SERVICE_ID_SQL = "SELECT ID, SERVICE_ID, HEADER_KEY, HEADER_VALUE, " +
             "CATEGORY FROM EXTERNAL_SERVICE_HEADERS WHERE SERVICE_ID = ?";
-    private static final String GET_ALL_EXTERNAL_SERVICES_SQL = "SELECT ID, NAME, URL, PROMPT, TIMEOUT_MS, " +
-            "RETRY_COUNT, CREATED_AT FROM EXTERNAL_SERVICES";
+        private static final String GET_ALL_EXTERNAL_SERVICES_SQL = "SELECT ID, NAME, URL, PROMPT, TIMEOUT_MS, " +
+            "RETRY_COUNT, IS_LLM, CREATED_AT FROM EXTERNAL_SERVICES";
 
     @Override
     public ExternalService addExternalService(ExternalService externalService) throws APIMGovernanceException {
@@ -80,8 +80,9 @@ public class ExternalServiceMgtDAOImpl implements ExternalServiceMgtDAO {
                     } else {
                         preparedStatement.setNull(6, java.sql.Types.INTEGER);
                     }
+                    preparedStatement.setBoolean(7, externalService.getIsLLM() != null && externalService.getIsLLM());
                     Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
-                    preparedStatement.setTimestamp(7, currentTimestamp);
+                    preparedStatement.setTimestamp(8, currentTimestamp);
                     if (externalService.getCreatedAt() == null) {
                         externalService.setCreatedAt(currentTimestamp.toString());
                     }
@@ -120,7 +121,8 @@ public class ExternalServiceMgtDAOImpl implements ExternalServiceMgtDAO {
                     } else {
                         preparedStatement.setNull(5, java.sql.Types.INTEGER);
                     }
-                    preparedStatement.setString(6, externalService.getId());
+                    preparedStatement.setBoolean(6, externalService.getIsLLM() != null && externalService.getIsLLM());
+                    preparedStatement.setString(7, externalService.getId());
                     preparedStatement.executeUpdate();
                 }
 
@@ -218,7 +220,8 @@ DELETE_HEADERS_BY_SERVICE_ID_SQL)) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(
                     ADD_EXTERNAL_SERVICE_HEADER_SQL)) {
                 for (ExternalServiceHeader header : headers) {
-                    String category = header.getCategory() != null ? header.getCategory().name() : HeaderCategory.STANDARD.name();
+                    String category = header.getCategory() != null ? header.getCategory().name() :
+                            HeaderCategory.STANDARD.name();
                     preparedStatement.setString(1, serviceId);
                     preparedStatement.setString(2, header.getHeaderKey());
                     preparedStatement.setString(3, header.getHeaderValue());
@@ -267,6 +270,10 @@ DELETE_HEADERS_BY_SERVICE_ID_SQL)) {
         int retryCount = resultSet.getInt("RETRY_COUNT");
         if (!resultSet.wasNull()) {
             service.setRetryCount(retryCount);
+        }
+        boolean isLLM = resultSet.getBoolean("IS_LLM");
+        if (!resultSet.wasNull()) {
+            service.setIsLLM(isLLM);
         }
         Timestamp createdAt = resultSet.getTimestamp("CREATED_AT");
         if (createdAt != null) {
