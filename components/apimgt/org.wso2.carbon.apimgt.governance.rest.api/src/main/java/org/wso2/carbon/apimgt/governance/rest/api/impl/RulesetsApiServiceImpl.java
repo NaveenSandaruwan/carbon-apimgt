@@ -179,8 +179,8 @@ public class RulesetsApiServiceImpl implements RulesetsApiService {
                     isComplianceExcluded = true;
                 }
             }
-            if (name != null && (name.toLowerCase().contains("lifecycle")
-                    || name.toLowerCase().contains("retirement"))) {
+            if (StringUtils.containsIgnoreCase(name, "lifecycle")
+                    || StringUtils.containsIgnoreCase(name, "retirement")) {
                 isComplianceExcluded = true;
             }
             if (!isComplianceExcluded) {
